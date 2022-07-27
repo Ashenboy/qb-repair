@@ -1,6 +1,8 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local pedSpawned = false
+local entity = {}
 
-CreateThread(function()
+local function createBlips()
     if Config.Blips then
         for k, v in pairs(Config.VehicleRepairLocation) do
             local Rep = AddBlipForCoord(v.coords.x, v.coords.y, v.coords.z)
@@ -13,7 +15,7 @@ CreateThread(function()
             EndTextCommandSetBlipName(Rep)
         end
     end
-end)
+end
 
 RegisterNetEvent('qb-repair:fixCarS', function()
     if GetPedInVehicleSeat(GetVehiclePedIsIn(PlayerPedId()), -1) == PlayerPedId() then
@@ -57,20 +59,21 @@ RegisterNetEvent('qb-repair:fixCar', function()
 
 end)
 
-CreateThread(function()
+local function createPeds()
+    if pedSpawned then return end
     for k, v in pairs(Config.VehicleRepairLocation) do
         local model = "s_m_y_armymech_01"
         RequestModel(model)
         while not HasModelLoaded(model) do
           Wait(0)
         end
-        local entity = CreatePed(0, model, vector4(v.coords.x, v.coords.y, v.coords.z-0.9,v.Heading), true, false)
-        TaskStartScenarioInPlace(entity, "WORLD_HUMAN_CLIPBOARD_FACILITY", true)
-        FreezeEntityPosition(entity, true)
-        SetEntityInvincible(entity, true)
-        SetBlockingOfNonTemporaryEvents(entity, true)
+        entity[k] = CreatePed(0, model, vector4(v.coords.x, v.coords.y, v.coords.z-0.9,v.Heading), true, false)
+        TaskStartScenarioInPlace(entity[k], "WORLD_HUMAN_CLIPBOARD_FACILITY", true)
+        FreezeEntityPosition(entity[k], true)
+        SetEntityInvincible(entity[k], true)
+        SetBlockingOfNonTemporaryEvents(entity[k], true)
  
-        exports['qb-target']:AddTargetEntity(entity, {
+        exports['qb-target']:AddTargetEntity(entity[k], {
             options = {
             {
                 type = "client",
@@ -81,5 +84,36 @@ CreateThread(function()
             },
             distance = 3.5,
         })
+    end
+    pedSpawned = true
+end
+
+local function deletePeds()
+    if pedSpawned then
+        for _, v in pairs(entity) do
+            DeletePed(v)
+        end
+    end
+end
+
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    createBlips()
+    createPeds()
+end)
+
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    deletePeds()
+end)
+
+AddEventHandler('onResourceStart', function(resourceName)
+    if GetCurrentResourceName() == resourceName then
+        createBlips()
+        createPeds()
+    end
+end)
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if GetCurrentResourceName() == resourceName then
+        deletePeds()
     end
 end)

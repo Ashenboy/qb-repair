@@ -67,7 +67,7 @@ local function createPeds()
         while not HasModelLoaded(model) do
           Wait(0)
         end
-        entity[k] = CreatePed(0, model, vector4(v.coords.x, v.coords.y, v.coords.z-0.9,v.Heading), true, false)
+        entity[k] = CreatePed(0, model, vector4(v.coords.x, v.coords.y, v.coords.z-0.9,v.Heading), false, false)
         TaskStartScenarioInPlace(entity[k], "WORLD_HUMAN_CLIPBOARD_FACILITY", true)
         FreezeEntityPosition(entity[k], true)
         SetEntityInvincible(entity[k], true)
